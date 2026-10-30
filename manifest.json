@@ -1,9 +1,28 @@
 {
   "name": "Conta em Dia",
   "short_name": "Conta em Dia",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#ea580c",
-  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png" }]
+  "description": "Suas contas organizadas, mês a mês",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
 }
