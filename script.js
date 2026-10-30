@@ -1,20 +1,31 @@
-// FIX AVISO FEIO - remove "bruhghost-front design.github.io diz"
-(function(){
-  function criarModal(msg){
-    let exist = document.getElementById('customModal');
-    if(exist){
-      document.getElementById('modalTitle').textContent='Conta em Dia';
-      document.getElementById('modalMsg').textContent=msg;
-      exist.style.display='flex';
-    } else {
-      let div = document.createElement('div');
-      div.innerHTML = `<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px"><div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:320px;border-top:4px solid #ea580c"><b style="color:#0f172a">Conta em Dia</b><p style="margin:12px 0;background:#f8fafc;padding:10px;border-radius:10px;font-size:13px;color:#475569">${msg}</p><div style="text-align:right"><button onclick="this.closest('div').parentElement.parentElement.remove()" style="background:#ea580c;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:800">OK</button></div></div></div>`;
-      document.body.appendChild(div);
-    }
-  }
-  window.alert = function(msg){ criarModal(msg); };
-})();
+// SISTEMA DE AVISOS BONITOS - ELIMINA bruhghost-front design.github.io diz
+let modalCb = null;
+let modalMode = 'alert';
+function showModal(msg, titulo='Conta em Dia', icon='💡', mostrarCancelar=false, comInput=false, placeholder='', valorPadrao=''){
+  document.getElementById('modalTitle').textContent=titulo;
+  document.getElementById('modalMsg').textContent=msg;
+  document.getElementById('modalIcon').textContent=icon;
+  document.getElementById('modalCancel').style.display=mostrarCancelar?'block':'none';
+  let inp = document.getElementById('modalInput');
+  if(comInput){ inp.style.display='block'; inp.placeholder=placeholder; inp.value=valorPadrao; setTimeout(()=>inp.focus(),100); } else { inp.style.display='none'; inp.value=''; }
+  document.getElementById('customModal').style.display='flex';
+  return new Promise(resolve=>{ modalCb=resolve; });
+}
+function fecharModal(ok){
+  let inp = document.getElementById('modalInput');
+  let val = inp.style.display!=='none' ? inp.value : ok;
+  document.getElementById('customModal').style.display='none';
+  if(modalCb){ modalCb(modalMode==='prompt'? (ok?val:null) : ok); modalCb=null; }
+  inp.style.display='none';
+}
+function showToast(msg){ let t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2500); }
 
+// SOBRESCREVE TODOS OS ALERTS FEIOS
+window.alert = function(msg){ showModal(msg,'Conta em Dia','💡',false,false); };
+window.confirm = function(msg){ modalMode='confirm'; return showModal(msg,'Confirmar','❓',true,false); };
+window.prompt = function(msg, def=''){ modalMode='prompt'; return showModal(msg,'Digite','✏️',true,true,msg,def); };
+
+// Agora o resto do app
 let contas = JSON.parse(localStorage.getItem('contas_v2_gas')||'[]');
 let templates = JSON.parse(localStorage.getItem('templates_contas')||'[]');
 let logs = JSON.parse(localStorage.getItem('logs_mod')||'[]');
@@ -25,36 +36,34 @@ let anoAtual = new Date().getFullYear();
 let mesAtual = new Date().getMonth();
 const ADMIN_PASS = 'Sofia919521*';
 
-function showToast(msg){ let t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2500); }
-function addLog(acao){ let now=new Date(); logs.unshift({data:now.toLocaleDateString('pt-BR'),hora:now.toLocaleTimeString('pt-BR'),acao,usuario:currentUser?currentUser.user:'visitante'}); if(logs.length>200) logs.pop(); localStorage.setItem('logs_mod',JSON.stringify(logs)); }
+function addLog(acao){ let now=new Date(); logs.unshift({data:now.toLocaleDateString('pt-BR'),[STRIPPED] if(logs.length>200) logs.pop(); localStorage.setItem('logs_mod',JSON.stringify(logs)); }
 function salvar(){ localStorage.setItem('contas_v2_gas',JSON.stringify(contas)); localStorage.setItem('templates_contas',JSON.stringify(templates)); }
-
 function mostrarLogin(){ document.getElementById('formLogin').style.display='block'; document.getElementById('formCadastro').style.display='none'; document.getElementById('formEsqueci').style.display='none'; }
 function mostrarCadastro(){ document.getElementById('formLogin').style.display='none'; document.getElementById('formCadastro').style.display='block'; document.getElementById('formEsqueci').style.display='none'; }
 function mostrarEsqueci(){ document.getElementById('formLogin').style.display='none'; document.getElementById('formCadastro').style.display='none'; document.getElementById('formEsqueci').style.display='block'; }
 
-function fazerCadastro(){
+async function fazerCadastro(){
   let user=document.getElementById('cadUser').value.trim();
   let email=document.getElementById('cadEmail').value.trim().toLowerCase();
   let cel=document.getElementById('cadCel').value.trim();
   let pass=document.getElementById('cadPass').value;
   let pass2=document.getElementById('cadPass2').value;
-  if(!user||!email||!cel||!pass){ alert('Preencha todos os campos obrigatórios!'); return; }
-  if(pass!==pass2){ alert('As senhas não conferem!'); return; }
-  if(users.find(u=>u.email===email)){ alert('E-mail já cadastrado!'); return; }
-  if(users.find(u=>u.user===user)){ alert('Usuário já existe!'); return; }
+  if(!user||!email||!cel||!pass){ await showModal('Preencha todos os campos obrigatórios!','Campos faltando','⚠️'); return; }
+  if(pass!==pass2){ await showModal('As senhas não conferem!','Erro','❌'); return; }
+  if(users.find(u=>u.email===email)){ await showModal('E-mail já cadastrado!','Já existe','⚠️'); return; }
+  if(users.find(u=>u.user===user)){ await showModal('Usuário já existe!','Já existe','⚠️'); return; }
   users.push({user,email,cel,pass,criado:new Date().toISOString()});
   localStorage.setItem('app_users',JSON.stringify(users));
   addLog(`Novo cadastro: ${user}`);
-  alert('Conta criada com sucesso! Faça login agora.');
+  await showModal('Conta criada com sucesso! Faça login agora.','Sucesso','✅');
   mostrarLogin();
 }
-function fazerLogin(){
+async function fazerLogin(){
   let u=document.getElementById('loginUser').value.trim().toLowerCase();
   let p=document.getElementById('loginPass').value;
   if(p===ADMIN_PASS){ isAdmin=true; localStorage.setItem('is_admin','true'); currentUser={user:'Administrador',email:'admin',admin:true}; localStorage.setItem('current_user',JSON.stringify(currentUser)); addLog('Login ADMIN'); entrarApp(); return; }
   let found=users.find(x=>(x.user.toLowerCase()===u || x.email===u) && x.pass===p);
-  if(!found){ alert('Usuário ou senha incorretos!'); return; }
+  if(!found){ await showModal('Usuário ou senha incorretos!','Erro no login','❌'); return; }
   currentUser=found; localStorage.setItem('current_user',JSON.stringify(currentUser)); addLog(`Login: ${found.user}`); entrarApp();
 }
 function enviarReset(){
@@ -65,16 +74,16 @@ function enviarReset(){
   let token=Math.random().toString(36).slice(2)+Date.now();
   localStorage.setItem('reset_'+email,token);
   let link=location.href.split('?')[0]+`?reset=${token}&email=${encodeURIComponent(email)}`;
-  msg.innerHTML=`<span style="color:#16a34a">Link enviado!</span><br><small><a href="${link}">${link}</a></small>`;
+  msg.innerHTML=`<span style="color:#16a34a">Link gerado!</span><br><small><a href="${link}">${link}</a></small>`;
 }
-function verificarResetURL(){
+async function verificarResetURL(){
   let params=new URLSearchParams(location.search);
   let token=params.get('reset'); let email=params.get('email');
-  if(token&&email){ let saved=localStorage.getItem('reset_'+email); if(saved===token){ let nova=prompt(`Nova senha para ${email}:`); if(nova){ let u=users.find(x=>x.email===email); if(u){ u.pass=nova; localStorage.setItem('app_users',JSON.stringify(users)); localStorage.removeItem('reset_'+email); alert('Senha redefinida!'); history.replaceState({},'',location.pathname);} } } }
+  if(token&&email){ let saved=localStorage.getItem('reset_'+email); if(saved===token){ modalMode='prompt'; let nova = await showModal(`Nova senha para ${email}:`,'Redefinir senha','🔑',true,true,'Nova senha',''); if(nova){ let u=users.find(x=>x.email===email); if(u){ u.pass=nova; localStorage.setItem('app_users',JSON.stringify(users)); localStorage.removeItem('reset_'+email); await showModal('Senha redefinida!','Sucesso','✅'); history.replaceState({},'',location.pathname);} } } }
 }
 function entrarApp(){ document.getElementById('telaLogin').style.display='none'; document.getElementById('telaApp').style.display='block'; document.getElementById('userLogadoInfo').textContent=currentUser?currentUser.user:''; irHoje(); verificarAdmin(); }
 function fazerLogout(){ localStorage.removeItem('current_user'); localStorage.removeItem('is_admin'); location.reload(); }
-function tentarAdmin(){ let p=prompt('Senha admin:'); if(p===ADMIN_PASS){ isAdmin=true; localStorage.setItem('is_admin','true'); entrarApp(); showToast('Admin ativado!'); } }
+async function tentarAdmin(){ modalMode='prompt'; let p = await showModal('Senha admin:','Admin','👑',true,true,'Senha admin',''); if(p===ADMIN_PASS){ isAdmin=true; localStorage.setItem('is_admin','true'); entrarApp(); showToast('Admin ativado!'); } }
 function verificarAdmin(){ let panel=document.getElementById('adminPanel'); if(panel && isAdmin){ panel.style.display='block'; document.getElementById('adminUsers').innerHTML=`<p><b>${users.length}</b> usuários</p>`+users.map(u=>`<div style="font-size:11px;padding:3px;border-bottom:1px solid #eee">${u.user} - ${u.email}</div>`).join(''); } }
 
 function initSelects(){
@@ -88,7 +97,7 @@ function mudarMes(d){ mesAtual+=d; if(mesAtual>11){mesAtual=0;anoAtual++;} if(me
 function irHoje(){ anoAtual=new Date().getFullYear(); mesAtual=new Date().getMonth(); render(); }
 function aba(t){ document.getElementById('abaMes').style.display=t==='mes'?'block':'none'; document.getElementById('abaCal').style.display=t==='cal'?'block':'none'; document.getElementById('abaAnual').style.display=t==='anual'?'block':'none'; document.getElementById('abaLog').style.display=t==='log'?'block':'none'; document.querySelectorAll('.tab').forEach(el=>el.classList.remove('ativo')); document.getElementById(t==='mes'?'tMes':t==='cal'?'tCal':t==='anual'?'tAnual':'tLog').classList.add('ativo'); render(); }
 
-function addConta(){
+async function addConta(){
   const nome=document.getElementById('fNome').value.trim();
   const mesRef=document.getElementById('fMesRef').value;
   const anoRef=document.getElementById('fAnoRef').value;
@@ -98,9 +107,9 @@ function addConta(){
   const repetirSel=document.getElementById('fRepetir').value;
   const repetirCustom=document.getElementById('fRepetirCustom').value;
   const fileInput=document.getElementById('fComprovante');
-  if(!nome){ alert('Digite o nome da conta!'); return; }
-  if(!vencInput){ alert('Selecione a data de vencimento!'); return; }
-  if(!valorInput){ alert('Digite o valor!'); return; }
+  if(!nome){ await showModal('Digite o nome da conta! Ex: Gás Naturgy','Campo obrigatório','📝'); return; }
+  if(!vencInput){ await showModal('Selecione a data de vencimento!','Falta data','📅'); return; }
+  if(!valorInput){ await showModal('Digite o valor da conta!','Falta valor','💰'); return; }
   let repetir=repetirSel==='custom'?parseInt(repetirCustom)||1:parseInt(repetirSel)||1;
   let dataVenc=new Date(vencInput+'T12:00:00');
   let valor=parseFloat(valorInput.replace(',','.'));
@@ -108,7 +117,7 @@ function addConta(){
   if(!templates.find(t=>t.nome.toLowerCase()===nome.toLowerCase())){ templates.push({nome,categoria:cat}); }
   const salvarConta=(base64)=>{
     for(let i=0;i<repetir;i++){ let d=new Date(dataVenc); d.setMonth(d.getMonth()+i); contas.push({id:Date.now()+Math.random()+i,nome,ref:refStr,valor,diaVenc:d.getDate(),mes:d.getMonth(),ano:d.getFullYear(),vencISO:d.toISOString().slice(0,10),vencBR:d.toLocaleDateString('pt-BR'),categoria:cat,comprovante:i===0?base64:null,quitado:false}); }
-    salvar(); addLog(`Adicionou: ${nome} R$ ${valor} ref ${refStr}`); render();
+    salvar(); addLog(`Adicionou: ${nome} R$ ${valor}`); render();
     document.getElementById('fValor').value=''; document.getElementById('fComprovante').value='';
     showToast('Conta adicionada!');
   };
@@ -116,11 +125,11 @@ function addConta(){
 }
 function usarTemplate(nome){ let t=templates.find(x=>x.nome===nome); if(!t) return; document.getElementById('fNome').value=t.nome; document.getElementById('fCat').value=t.categoria; document.getElementById('fMesRef').value=mesAtual+1; document.getElementById('fAnoRef').value=anoAtual; showToast(`Usando ${nome}`); }
 function replicarConta(id){ let o=contas.find(x=>String(x.id)===String(id)); if(!o) return; let d=new Date(o.ano,o.mes+1,o.diaVenc); contas.push({id:Date.now()+Math.random(),nome:o.nome,ref:`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,valor:o.valor,diaVenc:d.getDate(),mes:d.getMonth(),ano:d.getFullYear(),vencISO:d.toISOString().slice(0,10),vencBR:d.toLocaleDateString('pt-BR'),categoria:o.categoria,comprovante:null,quitado:false}); salvar(); addLog(`Replicou ${o.nome}`); anoAtual=d.getFullYear(); mesAtual=d.getMonth(); render(); showToast('Replicado!'); }
-function editarConta(id){ let c=contas.find(x=>String(x.id)===String(id)); if(!c) return; let v=prompt('Novo valor:',c.valor); if(v===null) return; c.valor=parseFloat(v.replace(',','.'))||c.valor; salvar(); render(); showToast('Editado!'); }
-function toggleQuitado(id){ let c=contas.find(x=>String(x.id)===String(id)); if(c){c.quitado=!c.quitado; salvar(); addLog(`${c.quitado?'Quitou':'Desquitou'} ${c.nome}`); render(); showToast(c.quitado?'Pago!':'Pendente');} }
-function remover(id){ if(!confirm('Excluir?')) return; let c=contas.find(x=>String(x.id)===String(id)); contas=contas.filter(x=>String(x.id)!==String(id)); salvar(); addLog(`Excluiu ${c?c.nome:''}`); render(); showToast('Excluído!'); }
+async function editarConta(id){ let c=contas.find(x=>String(x.id)===String(id)); if(!c) return; modalMode='prompt'; let v = await showModal(`Novo valor para ${c.nome}:`,'Editar valor','✏️',true,true,'Valor',c.valor); if(v===null) return; modalMode='prompt'; let dia = await showModal('Novo dia de vencimento:','Editar dia','📅',true,true,'Dia',c.diaVenc); if(dia===null) return; c.valor=parseFloat(String(v).replace(',','.'))||c.valor; c.diaVenc=parseInt(dia)||c.diaVenc; salvar(); render(); showToast('Editado!'); }
+function toggleQuitado(id){ let c=contas.find(x=>String(x.id)===String(id)); if(c){c.quitado=!c.quitado; salvar(); addLog(`${c.quitado?'Quitou':'Desquitou'} ${c.nome}`); render(); showToast(c.quitado?'Pago! ✅':'Pendente');} }
+async function remover(id){ let c=contas.find(x=>String(x.id)===String(id)); modalMode='confirm'; let ok = await showModal(`Excluir "${c?c.nome:''}"? Essa ação não pode ser desfeita.`,'Excluir conta','🗑️',true,false); if(ok){ contas=contas.filter(x=>String(x.id)!==String(id)); salvar(); addLog(`Excluiu ${c?c.nome:''}`); render(); showToast('Excluído!'); } }
 function anexar(id,input){ let c=contas.find(x=>String(x.id)===String(id)); if(!c||!input.files[0]) return; let r=new FileReader(); r.onload=e=>{c.comprovante=e.target.result; salvar(); render(); showToast('Anexado!');}; r.readAsDataURL(input.files[0]); }
-function loadGasNaturgy(){ const dados=[{ref:'10/2026',valor:45.76,venc:'2026-11-04'},{ref:'09/2026',valor:62.20,venc:'2026-10-05'},{ref:'08/2026',valor:52.92,venc:'2026-09-03'},{ref:'07/2026',valor:53.00,venc:'2026-08-03'},{ref:'06/2026',valor:57.54,venc:'2026-07-03'},{ref:'05/2026',valor:44.39,venc:'2026-06-03'},{ref:'04/2026',valor:53.53,venc:'2026-05-05'},{ref:'03/2026',valor:44.39,venc:'2026-04-03'},{ref:'02/2026',valor:46.67,venc:'2026-03-07'},{ref:'01/2026',valor:37.95,venc:'2026-02-03'},{ref:'12/2025',valor:52.04,venc:'2026-01-07'},{ref:'11/2025',valor:51.24,venc:'2025-12-03'},{ref:'10/2025',valor:31.30,venc:'2025-11-03'}]; dados.forEach(d=>{let dt=new Date(d.venc+'T12:00:00'); contas.push({id:Date.now()+Math.random(),nome:'Gás Naturgy',ref:d.ref,valor:d.valor,diaVenc:dt.getDate(),mes:dt.getMonth(),ano:dt.getFullYear(),vencISO:d.venc,vencBR:dt.toLocaleDateString('pt-BR'),categoria:'Gás',comprovante:null,quitado:false});}); if(!templates.find(t=>t.nome==='Gás Naturgy')) templates.push({nome:'Gás Naturgy',categoria:'Gás'}); salvar(); render(); showToast('Importado!'); }
+async function loadGasNaturgy(){ modalMode='confirm'; let ok = await showModal('Importar 13 contas de Gás do seu print? (out/2025 a out/2026)','Importar Gás','📥',true,false); if(!ok) return; const dados=[{ref:'10/2026',valor:45.76,venc:'2026-11-04'},{ref:'09/2026',valor:62.20,venc:'2026-10-05'},{ref:'08/2026',valor:52.92,venc:'2026-09-03'},{ref:'07/2026',valor:53.00,venc:'2026-08-03'},{ref:'06/2026',valor:57.54,venc:'2026-07-03'},{ref:'05/2026',valor:44.39,venc:'2026-06-03'},{ref:'04/2026',valor:53.53,venc:'2026-05-05'},{ref:'03/2026',valor:44.39,venc:'2026-04-03'},{ref:'02/2026',valor:46.67,venc:'2026-03-07'},{ref:'01/2026',valor:37.95,venc:'2026-02-03'},{ref:'12/2025',valor:52.04,venc:'2026-01-07'},{ref:'11/2025',valor:51.24,venc:'2025-12-03'},{ref:'10/2025',valor:31.30,venc:'2025-11-03'}]; dados.forEach(d=>{let dt=new Date(d.venc+'T12:00:00'); contas.push({id:Date.now()+Math.random(),nome:'Gás Naturgy',ref:d.ref,valor:d.valor,diaVenc:dt.getDate(),mes:dt.getMonth(),ano:dt.getFullYear(),vencISO:d.venc,vencBR:dt.toLocaleDateString('pt-BR'),categoria:'Gás',comprovante:null,quitado:false});}); if(!templates.find(t=>t.nome==='Gás Naturgy')) templates.push({nome:'Gás Naturgy',categoria:'Gás'}); salvar(); render(); showToast('Importado!'); }
 
 function render(){
   initSelects();
@@ -147,7 +156,7 @@ function render(){
   let logDiv=document.getElementById('logLista'); if(logDiv){ logDiv.innerHTML=logs.length===0?'<small>Nenhum log</small>':logs.map(l=>`<div class="log-item"><b>${l.data} ${l.hora}</b> - ${l.acao}</div>`).join(''); }
 }
 let deferredPrompt; window.addEventListener('beforeinstallprompt', e=>{e.preventDefault(); deferredPrompt=e;});
-function instalarPWA(){ if(deferredPrompt){deferredPrompt.prompt();} else { alert('iPhone: compartilhar > Adicionar à Tela de Início\nAndroid: menu ⋮ > Instalar app');} }
+function instalarPWA(){ if(deferredPrompt){deferredPrompt.prompt();} else { showModal('iPhone: compartilhar > Adicionar à Tela de Início\nAndroid: menu ⋮ > Instalar app','Como instalar','📲');} }
 verificarResetURL();
 if(currentUser){ entrarApp(); } else { document.getElementById('telaLogin').style.display='flex'; document.getElementById('telaApp').style.display='none'; }
 irHoje(); render();
