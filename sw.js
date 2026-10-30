@@ -1,8 +1,6 @@
-self.addEventListener('install', e => self.skipWaiting());
-self.addEventListener('activate', e => self.clients.claim());
-self.addEventListener('push', function(e){
-  self.registration.showNotification('Controle de Contas', {
-    body: e.data ? e.data.text() : 'Você tem contas vencendo!',
-    icon: 'https://cdn-icons-png.flaticon.com/512/584/584026.png'
-  });
+const VERSION='v4-conta-em-dia-final-30-10-2026';
+self.addEventListener('install', e=>{self.skipWaiting();});
+self.addEventListener('activate', e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))));
+  self.clients.claim();
 });
