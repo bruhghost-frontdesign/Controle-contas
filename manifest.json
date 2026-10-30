@@ -1,13 +1,13 @@
 {
-  "name": "Controle de Contas",
-  "short_name": "Contas",
+  "name": "Conta em Dia",
+  "short_name": "Conta em Dia",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "theme_color": "#ea580c",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/584/584026.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
