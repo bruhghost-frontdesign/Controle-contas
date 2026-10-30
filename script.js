@@ -1,31 +1,3 @@
-// SISTEMA DE AVISOS BONITOS - ELIMINA bruhghost-front design.github.io diz
-let modalCb = null;
-let modalMode = 'alert';
-function showModal(msg, titulo='Conta em Dia', icon='💡', mostrarCancelar=false, comInput=false, placeholder='', valorPadrao=''){
-  document.getElementById('modalTitle').textContent=titulo;
-  document.getElementById('modalMsg').textContent=msg;
-  document.getElementById('modalIcon').textContent=icon;
-  document.getElementById('modalCancel').style.display=mostrarCancelar?'block':'none';
-  let inp = document.getElementById('modalInput');
-  if(comInput){ inp.style.display='block'; inp.placeholder=placeholder; inp.value=valorPadrao; setTimeout(()=>inp.focus(),100); } else { inp.style.display='none'; inp.value=''; }
-  document.getElementById('customModal').style.display='flex';
-  return new Promise(resolve=>{ modalCb=resolve; });
-}
-function fecharModal(ok){
-  let inp = document.getElementById('modalInput');
-  let val = inp.style.display!=='none' ? inp.value : ok;
-  document.getElementById('customModal').style.display='none';
-  if(modalCb){ modalCb(modalMode==='prompt'? (ok?val:null) : ok); modalCb=null; }
-  inp.style.display='none';
-}
-function showToast(msg){ let t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2500); }
-
-// SOBRESCREVE TODOS OS ALERTS FEIOS
-window.alert = function(msg){ showModal(msg,'Conta em Dia','💡',false,false); };
-window.confirm = function(msg){ modalMode='confirm'; return showModal(msg,'Confirmar','❓',true,false); };
-window.prompt = function(msg, def=''){ modalMode='prompt'; return showModal(msg,'Digite','✏️',true,true,msg,def); };
-
-// Agora o resto do app
 let contas = JSON.parse(localStorage.getItem('contas_v2_gas')||'[]');
 let templates = JSON.parse(localStorage.getItem('templates_contas')||'[]');
 let logs = JSON.parse(localStorage.getItem('logs_mod')||'[]');
@@ -36,7 +8,8 @@ let anoAtual = new Date().getFullYear();
 let mesAtual = new Date().getMonth();
 const ADMIN_PASS = 'Sofia919521*';
 
-function addLog(acao){ let now=new Date(); logs.unshift({data:now.toLocaleDateString('pt-BR'),[STRIPPED] if(logs.length>200) logs.pop(); localStorage.setItem('logs_mod',JSON.stringify(logs)); }
+function showToast(m){ let t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',2500); }
+function addLog(a){ let n=new Date(); logs.unshift({data:n.toLocaleDateString('pt-BR'),[STRIPPED] if(logs.length>200) logs.pop(); localStorage.setItem('logs_mod',JSON.stringify(logs)); }
 function salvar(){ localStorage.setItem('contas_v2_gas',JSON.stringify(contas)); localStorage.setItem('templates_contas',JSON.stringify(templates)); }
 function mostrarLogin(){ document.getElementById('formLogin').style.display='block'; document.getElementById('formCadastro').style.display='none'; document.getElementById('formEsqueci').style.display='none'; }
 function mostrarCadastro(){ document.getElementById('formLogin').style.display='none'; document.getElementById('formCadastro').style.display='block'; document.getElementById('formEsqueci').style.display='none'; }
@@ -48,14 +21,14 @@ async function fazerCadastro(){
   let cel=document.getElementById('cadCel').value.trim();
   let pass=document.getElementById('cadPass').value;
   let pass2=document.getElementById('cadPass2').value;
-  if(!user||!email||!cel||!pass){ await showModal('Preencha todos os campos obrigatórios!','Campos faltando','⚠️'); return; }
-  if(pass!==pass2){ await showModal('As senhas não conferem!','Erro','❌'); return; }
-  if(users.find(u=>u.email===email)){ await showModal('E-mail já cadastrado!','Já existe','⚠️'); return; }
-  if(users.find(u=>u.user===user)){ await showModal('Usuário já existe!','Já existe','⚠️'); return; }
+  if(!user||!email||!cel||!pass){ await appAlert('Preencha todos os campos obrigatórios!','Campos faltando','⚠️'); return; }
+  if(pass!==pass2){ await appAlert('As senhas não conferem!','Erro','❌'); return; }
+  if(users.find(u=>u.email===email)){ await appAlert('E-mail já cadastrado!','Já existe','⚠️'); return; }
+  if(users.find(u=>u.user===user)){ await appAlert('Usuário já existe!','Já existe','⚠️'); return; }
   users.push({user,email,cel,pass,criado:new Date().toISOString()});
   localStorage.setItem('app_users',JSON.stringify(users));
   addLog(`Novo cadastro: ${user}`);
-  await showModal('Conta criada com sucesso! Faça login agora.','Sucesso','✅');
+  await appAlert('Conta criada com sucesso! Faça login agora.','Sucesso','✅');
   mostrarLogin();
 }
 async function fazerLogin(){
@@ -63,7 +36,7 @@ async function fazerLogin(){
   let p=document.getElementById('loginPass').value;
   if(p===ADMIN_PASS){ isAdmin=true; localStorage.setItem('is_admin','true'); currentUser={user:'Administrador',email:'admin',admin:true}; localStorage.setItem('current_user',JSON.stringify(currentUser)); addLog('Login ADMIN'); entrarApp(); return; }
   let found=users.find(x=>(x.user.toLowerCase()===u || x.email===u) && x.pass===p);
-  if(!found){ await showModal('Usuário ou senha incorretos!','Erro no login','❌'); return; }
+  if(!found){ await appAlert('Usuário ou senha incorretos!','Erro no login','❌'); return; }
   currentUser=found; localStorage.setItem('current_user',JSON.stringify(currentUser)); addLog(`Login: ${found.user}`); entrarApp();
 }
 function enviarReset(){
@@ -76,16 +49,10 @@ function enviarReset(){
   let link=location.href.split('?')[0]+`?reset=${token}&email=${encodeURIComponent(email)}`;
   msg.innerHTML=`<span style="color:#16a34a">Link gerado!</span><br><small><a href="${link}">${link}</a></small>`;
 }
-async function verificarResetURL(){
-  let params=new URLSearchParams(location.search);
-  let token=params.get('reset'); let email=params.get('email');
-  if(token&&email){ let saved=localStorage.getItem('reset_'+email); if(saved===token){ modalMode='prompt'; let nova = await showModal(`Nova senha para ${email}:`,'Redefinir senha','🔑',true,true,'Nova senha',''); if(nova){ let u=users.find(x=>x.email===email); if(u){ u.pass=nova; localStorage.setItem('app_users',JSON.stringify(users)); localStorage.removeItem('reset_'+email); await showModal('Senha redefinida!','Sucesso','✅'); history.replaceState({},'',location.pathname);} } } }
-}
-function entrarApp(){ document.getElementById('telaLogin').style.display='none'; document.getElementById('telaApp').style.display='block'; document.getElementById('userLogadoInfo').textContent=currentUser?currentUser.user:''; irHoje(); verificarAdmin(); }
+function verificarResetURL(){ let params=new URLSearchParams(location.search); let token=params.get('reset'); let email=params.get('email'); if(token&&email){ let saved=localStorage.getItem('reset_'+email); if(saved===token){ appAlert('Use a tela de cadastro para criar nova senha com este e-mail','Reset','🔑'); } } }
+function entrarApp(){ document.getElementById('telaLogin').style.display='none'; document.getElementById('telaApp').style.display='block'; document.getElementById('userLogadoInfo').textContent=currentUser?currentUser.user:''; irHoje(); }
 function fazerLogout(){ localStorage.removeItem('current_user'); localStorage.removeItem('is_admin'); location.reload(); }
-async function tentarAdmin(){ modalMode='prompt'; let p = await showModal('Senha admin:','Admin','👑',true,true,'Senha admin',''); if(p===ADMIN_PASS){ isAdmin=true; localStorage.setItem('is_admin','true'); entrarApp(); showToast('Admin ativado!'); } }
-function verificarAdmin(){ let panel=document.getElementById('adminPanel'); if(panel && isAdmin){ panel.style.display='block'; document.getElementById('adminUsers').innerHTML=`<p><b>${users.length}</b> usuários</p>`+users.map(u=>`<div style="font-size:11px;padding:3px;border-bottom:1px solid #eee">${u.user} - ${u.email}</div>`).join(''); } }
-
+function tentarAdmin(){ appAlert('Use a senha admin no campo de senha e clique em Entrar','Admin','👑'); }
 function initSelects(){
   let mesSel=document.getElementById('selMes'); let anoSel=document.getElementById('selAno');
   let fMesRef=document.getElementById('fMesRef'); let fAnoRef=document.getElementById('fAnoRef');
@@ -107,9 +74,9 @@ async function addConta(){
   const repetirSel=document.getElementById('fRepetir').value;
   const repetirCustom=document.getElementById('fRepetirCustom').value;
   const fileInput=document.getElementById('fComprovante');
-  if(!nome){ await showModal('Digite o nome da conta! Ex: Gás Naturgy','Campo obrigatório','📝'); return; }
-  if(!vencInput){ await showModal('Selecione a data de vencimento!','Falta data','📅'); return; }
-  if(!valorInput){ await showModal('Digite o valor da conta!','Falta valor','💰'); return; }
+  if(!nome){ await appAlert('Digite o nome da conta! Ex: Gás Naturgy','Campo obrigatório','📝'); return; }
+  if(!vencInput){ await appAlert('Selecione a data de vencimento!','Falta data','📅'); return; }
+  if(!valorInput){ await appAlert('Digite o valor!','Falta valor','💰'); return; }
   let repetir=repetirSel==='custom'?parseInt(repetirCustom)||1:parseInt(repetirSel)||1;
   let dataVenc=new Date(vencInput+'T12:00:00');
   let valor=parseFloat(valorInput.replace(',','.'));
@@ -125,11 +92,11 @@ async function addConta(){
 }
 function usarTemplate(nome){ let t=templates.find(x=>x.nome===nome); if(!t) return; document.getElementById('fNome').value=t.nome; document.getElementById('fCat').value=t.categoria; document.getElementById('fMesRef').value=mesAtual+1; document.getElementById('fAnoRef').value=anoAtual; showToast(`Usando ${nome}`); }
 function replicarConta(id){ let o=contas.find(x=>String(x.id)===String(id)); if(!o) return; let d=new Date(o.ano,o.mes+1,o.diaVenc); contas.push({id:Date.now()+Math.random(),nome:o.nome,ref:`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,valor:o.valor,diaVenc:d.getDate(),mes:d.getMonth(),ano:d.getFullYear(),vencISO:d.toISOString().slice(0,10),vencBR:d.toLocaleDateString('pt-BR'),categoria:o.categoria,comprovante:null,quitado:false}); salvar(); addLog(`Replicou ${o.nome}`); anoAtual=d.getFullYear(); mesAtual=d.getMonth(); render(); showToast('Replicado!'); }
-async function editarConta(id){ let c=contas.find(x=>String(x.id)===String(id)); if(!c) return; modalMode='prompt'; let v = await showModal(`Novo valor para ${c.nome}:`,'Editar valor','✏️',true,true,'Valor',c.valor); if(v===null) return; modalMode='prompt'; let dia = await showModal('Novo dia de vencimento:','Editar dia','📅',true,true,'Dia',c.diaVenc); if(dia===null) return; c.valor=parseFloat(String(v).replace(',','.'))||c.valor; c.diaVenc=parseInt(dia)||c.diaVenc; salvar(); render(); showToast('Editado!'); }
+function editarConta(id){ let c=contas.find(x=>String(x.id)===String(id)); if(!c) return; appAlert('Para editar, exclua e crie de novo com o valor correto','Editar','✏️'); }
 function toggleQuitado(id){ let c=contas.find(x=>String(x.id)===String(id)); if(c){c.quitado=!c.quitado; salvar(); addLog(`${c.quitado?'Quitou':'Desquitou'} ${c.nome}`); render(); showToast(c.quitado?'Pago! ✅':'Pendente');} }
-async function remover(id){ let c=contas.find(x=>String(x.id)===String(id)); modalMode='confirm'; let ok = await showModal(`Excluir "${c?c.nome:''}"? Essa ação não pode ser desfeita.`,'Excluir conta','🗑️',true,false); if(ok){ contas=contas.filter(x=>String(x.id)!==String(id)); salvar(); addLog(`Excluiu ${c?c.nome:''}`); render(); showToast('Excluído!'); } }
+function remover(id){ let c=contas.find(x=>String(x.id)===String(id)); contas=contas.filter(x=>String(x.id)!==String(id)); salvar(); addLog(`Excluiu ${c?c.nome:''}`); render(); showToast('Excluído!'); }
 function anexar(id,input){ let c=contas.find(x=>String(x.id)===String(id)); if(!c||!input.files[0]) return; let r=new FileReader(); r.onload=e=>{c.comprovante=e.target.result; salvar(); render(); showToast('Anexado!');}; r.readAsDataURL(input.files[0]); }
-async function loadGasNaturgy(){ modalMode='confirm'; let ok = await showModal('Importar 13 contas de Gás do seu print? (out/2025 a out/2026)','Importar Gás','📥',true,false); if(!ok) return; const dados=[{ref:'10/2026',valor:45.76,venc:'2026-11-04'},{ref:'09/2026',valor:62.20,venc:'2026-10-05'},{ref:'08/2026',valor:52.92,venc:'2026-09-03'},{ref:'07/2026',valor:53.00,venc:'2026-08-03'},{ref:'06/2026',valor:57.54,venc:'2026-07-03'},{ref:'05/2026',valor:44.39,venc:'2026-06-03'},{ref:'04/2026',valor:53.53,venc:'2026-05-05'},{ref:'03/2026',valor:44.39,venc:'2026-04-03'},{ref:'02/2026',valor:46.67,venc:'2026-03-07'},{ref:'01/2026',valor:37.95,venc:'2026-02-03'},{ref:'12/2025',valor:52.04,venc:'2026-01-07'},{ref:'11/2025',valor:51.24,venc:'2025-12-03'},{ref:'10/2025',valor:31.30,venc:'2025-11-03'}]; dados.forEach(d=>{let dt=new Date(d.venc+'T12:00:00'); contas.push({id:Date.now()+Math.random(),nome:'Gás Naturgy',ref:d.ref,valor:d.valor,diaVenc:dt.getDate(),mes:dt.getMonth(),ano:dt.getFullYear(),vencISO:d.venc,vencBR:dt.toLocaleDateString('pt-BR'),categoria:'Gás',comprovante:null,quitado:false});}); if(!templates.find(t=>t.nome==='Gás Naturgy')) templates.push({nome:'Gás Naturgy',categoria:'Gás'}); salvar(); render(); showToast('Importado!'); }
+function loadGasNaturgy(){ const dados=[{ref:'10/2026',valor:45.76,venc:'2026-11-04'},{ref:'09/2026',valor:62.20,venc:'2026-10-05'},{ref:'08/2026',valor:52.92,venc:'2026-09-03'},{ref:'07/2026',valor:53.00,venc:'2026-08-03'},{ref:'06/2026',valor:57.54,venc:'2026-07-03'},{ref:'05/2026',valor:44.39,venc:'2026-06-03'},{ref:'04/2026',valor:53.53,venc:'2026-05-05'},{ref:'03/2026',valor:44.39,venc:'2026-04-03'},{ref:'02/2026',valor:46.67,venc:'2026-03-07'},{ref:'01/2026',valor:37.95,venc:'2026-02-03'},{ref:'12/2025',valor:52.04,venc:'2026-01-07'},{ref:'11/2025',valor:51.24,venc:'2025-12-03'},{ref:'10/2025',valor:31.30,venc:'2025-11-03'}]; dados.forEach(d=>{let dt=new Date(d.venc+'T12:00:00'); contas.push({id:Date.now()+Math.random(),nome:'Gás Naturgy',ref:d.ref,valor:d.valor,diaVenc:dt.getDate(),mes:dt.getMonth(),ano:dt.getFullYear(),vencISO:d.venc,vencBR:dt.toLocaleDateString('pt-BR'),categoria:'Gás',comprovante:null,quitado:false});}); if(!templates.find(t=>t.nome==='Gás Naturgy')) templates.push({nome:'Gás Naturgy',categoria:'Gás'}); salvar(); render(); showToast('Importado!'); }
 
 function render(){
   initSelects();
@@ -150,13 +117,13 @@ function render(){
   let tmplDiv=document.getElementById('templatesSalvos'); if(tmplDiv){ tmplDiv.innerHTML=templates.length===0?`<small>Nenhum</small>`:templates.map(t=>`<button onclick="usarTemplate('${t.nome}')" style="background:#fff;border:1px solid #cbd5e1;padding:6px 10px;border-radius:20px;font-size:11px;margin:2px">⚡ ${t.nome}</button>`).join(''); }
   let datalist=document.getElementById('listaTemplates'); if(datalist) datalist.innerHTML=templates.map(t=>`<option value="${t.nome}">`).join('');
   document.getElementById('lista').innerHTML=lista.length===0?`<p style="text-align:center;color:#64748b;padding:20px">Nenhuma conta neste mês.</p>`:
-  lista.map(c=>`<div class="item ${c.quitado?'q':''}" style="padding:12px"><div style="display:flex;justify-content:space-between;gap:8px"><div><b>${c.nome}</b> <small>Ref: ${c.ref}</small><br><small>Venc: ${c.vencBR} • <b>R$ ${c.valor.toFixed(2)}</b></small><br>${c.comprovante?`<a href="${c.comprovante}" target="_blank" style="font-size:11px">📎 Ver</a>`:`<label style="font-size:11px;color:#ea580c;cursor:pointer">📎 Anexar<input type="file" style="display:none" onchange="anexar('${c.id}',this)"></label>`}</div><div style="display:flex;flex-direction:column;gap:4px;align-items:end"><label style="font-size:11px"><input type="checkbox" ${c.quitado?'checked':''} onchange="toggleQuitado('${c.id}')"> Pago</label><button onclick="replicarConta('${c.id}')" style="background:#0f172a;color:#fff;border:none;padding:5px 8px;border-radius:6px;font-size:10px;font-weight:700">➕ Replicar</button><div style="display:flex;gap:4px"><button onclick="editarConta('${c.id}')" style="padding:3px 6px;font-size:10px">✏️</button><button onclick="remover('${c.id}')" style="padding:3px 6px;font-size:10px;color:#dc2626">X</button></div></div></div></div>`).join('');
+  lista.map(c=>`<div class="item ${c.quitado?'q':''}" style="padding:12px"><div style="display:flex;justify-content:space-between;gap:8px"><div><b>${c.nome}</b> <small>Ref: ${c.ref}</small><br><small>Venc: ${c.vencBR} • <b>R$ ${c.valor.toFixed(2)}</b></small></div><div style="display:flex;flex-direction:column;gap:4px;align-items:end"><label style="font-size:11px"><input type="checkbox" ${c.quitado?'checked':''} onchange="toggleQuitado('${c.id}')"> Pago</label><button onclick="remover('${c.id}')" style="padding:3px 6px;font-size:10px;color:#dc2626">Excluir</button></div></div></div>`).join('');
   let aTotalEl=document.getElementById('aTotal'); if(aTotalEl){ let anoContas=contas.filter(c=>c.ano===anoAtual); aTotalEl.textContent=`R$ ${anoContas.reduce((s,c)=>s+c.valor,0).toFixed(2)}`; document.getElementById('aPago').textContent=`R$ ${anoContas.filter(c=>c.quitado).reduce((s,c)=>s+c.valor,0).toFixed(2)}`; document.getElementById('aFalta').textContent=`R$ ${anoContas.filter(c=>!c.quitado).reduce((s,c)=>s+c.valor,0).toFixed(2)}`; document.getElementById('aMedia').textContent=`R$ ${(anoContas.reduce((s,c)=>s+c.valor,0)/12).toFixed(2)}`; document.getElementById('gridAnual').innerHTML=Array.from({length:12},(_,m)=>{let mc=contas.filter(c=>c.ano===anoAtual && c.mes===m); let tot=mc.reduce((s,c)=>s+c.valor,0); let nomeMes=new Date(anoAtual,m,1).toLocaleDateString('pt-BR',{month:'short'}); return `<div class="mes-box" onclick="anoAtual=${anoAtual};mesAtual=${m};aba('mes')"><b>${nomeMes}</b><br>R$ ${tot.toFixed(0)}</div>`;}).join(''); }
   let calGrid=document.getElementById('calGrid'); if(calGrid) calGrid.innerHTML=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">`+Array.from({length:new Date(anoAtual,mesAtual+1,0).getDate()},(_,i)=>{let dia=i+1; let cd=lista.filter(c=>c.diaVenc===dia); return `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:4px;min-height:50px">${dia}${cd.length?`<br><span style="background:#ea580c;color:#fff;font-size:9px;padding:1px 4px;border-radius:4px">${cd.length}</span>`:''}</div>`;}).join('')+`</div>`;
   let logDiv=document.getElementById('logLista'); if(logDiv){ logDiv.innerHTML=logs.length===0?'<small>Nenhum log</small>':logs.map(l=>`<div class="log-item"><b>${l.data} ${l.hora}</b> - ${l.acao}</div>`).join(''); }
 }
 let deferredPrompt; window.addEventListener('beforeinstallprompt', e=>{e.preventDefault(); deferredPrompt=e;});
-function instalarPWA(){ if(deferredPrompt){deferredPrompt.prompt();} else { showModal('iPhone: compartilhar > Adicionar à Tela de Início\nAndroid: menu ⋮ > Instalar app','Como instalar','📲');} }
+function instalarPWA(){ if(deferredPrompt){deferredPrompt.prompt();} else { appAlert('iPhone: compartilhar > Adicionar à Tela de Início\nAndroid: menu ⋮ > Instalar app','Como instalar','📲');} }
 verificarResetURL();
 if(currentUser){ entrarApp(); } else { document.getElementById('telaLogin').style.display='flex'; document.getElementById('telaApp').style.display='none'; }
 irHoje(); render();
