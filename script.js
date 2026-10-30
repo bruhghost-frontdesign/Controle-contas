@@ -15,28 +15,28 @@ function mostrarLogin(){ document.getElementById('formLogin').style.display='blo
 function mostrarCadastro(){ document.getElementById('formLogin').style.display='none'; document.getElementById('formCadastro').style.display='block'; document.getElementById('formEsqueci').style.display='none'; }
 function mostrarEsqueci(){ document.getElementById('formLogin').style.display='none'; document.getElementById('formCadastro').style.display='none'; document.getElementById('formEsqueci').style.display='block'; }
 
-async function fazerCadastro(){
+function fazerCadastro(){
   let user=document.getElementById('cadUser').value.trim();
   let email=document.getElementById('cadEmail').value.trim().toLowerCase();
   let cel=document.getElementById('cadCel').value.trim();
   let pass=document.getElementById('cadPass').value;
   let pass2=document.getElementById('cadPass2').value;
-  if(!user||!email||!cel||!pass){ await appAlert('Preencha todos os campos obrigatórios!','Campos faltando','⚠️'); return; }
-  if(pass!==pass2){ await appAlert('As senhas não conferem!','Erro','❌'); return; }
-  if(users.find(u=>u.email===email)){ await appAlert('E-mail já cadastrado!','Já existe','⚠️'); return; }
-  if(users.find(u=>u.user===user)){ await appAlert('Usuário já existe!','Já existe','⚠️'); return; }
+  if(!user||!email||!cel||!pass){ appAlert('Preencha todos os campos obrigatórios!','Campos faltando','⚠️'); return; }
+  if(pass!==pass2){ appAlert('As senhas não conferem!','Erro','❌'); return; }
+  if(users.find(u=>u.email===email)){ appAlert('E-mail já cadastrado!','Já existe','⚠️'); return; }
+  if(users.find(u=>u.user===user)){ appAlert('Usuário já existe!','Já existe','⚠️'); return; }
   users.push({user,email,cel,pass,criado:new Date().toISOString()});
   localStorage.setItem('app_users',JSON.stringify(users));
   addLog(`Novo cadastro: ${user}`);
-  await appAlert('Conta criada com sucesso! Faça login agora.','Sucesso','✅');
+  appAlert('Conta criada com sucesso! Faça login agora.','Sucesso','✅');
   mostrarLogin();
 }
-async function fazerLogin(){
+function fazerLogin(){
   let u=document.getElementById('loginUser').value.trim().toLowerCase();
   let p=document.getElementById('loginPass').value;
   if(p===ADMIN_PASS){ isAdmin=true; localStorage.setItem('is_admin','true'); currentUser={user:'Administrador',email:'admin',admin:true}; localStorage.setItem('current_user',JSON.stringify(currentUser)); addLog('Login ADMIN'); entrarApp(); return; }
   let found=users.find(x=>(x.user.toLowerCase()===u || x.email===u) && x.pass===p);
-  if(!found){ await appAlert('Usuário ou senha incorretos!','Erro no login','❌'); return; }
+  if(!found){ appAlert('Usuário ou senha incorretos!','Erro no login','❌'); return; }
   currentUser=found; localStorage.setItem('current_user',JSON.stringify(currentUser)); addLog(`Login: ${found.user}`); entrarApp();
 }
 function enviarReset(){
@@ -52,7 +52,6 @@ function enviarReset(){
 function verificarResetURL(){ let params=new URLSearchParams(location.search); let token=params.get('reset'); let email=params.get('email'); if(token&&email){ let saved=localStorage.getItem('reset_'+email); if(saved===token){ appAlert('Use a tela de cadastro para criar nova senha com este e-mail','Reset','🔑'); } } }
 function entrarApp(){ document.getElementById('telaLogin').style.display='none'; document.getElementById('telaApp').style.display='block'; document.getElementById('userLogadoInfo').textContent=currentUser?currentUser.user:''; irHoje(); }
 function fazerLogout(){ localStorage.removeItem('current_user'); localStorage.removeItem('is_admin'); location.reload(); }
-function tentarAdmin(){ appAlert('Use a senha admin no campo de senha e clique em Entrar','Admin','👑'); }
 function initSelects(){
   let mesSel=document.getElementById('selMes'); let anoSel=document.getElementById('selAno');
   let fMesRef=document.getElementById('fMesRef'); let fAnoRef=document.getElementById('fAnoRef');
@@ -63,8 +62,7 @@ function irParaMesAno(){ anoAtual=parseInt(document.getElementById('selAno').val
 function mudarMes(d){ mesAtual+=d; if(mesAtual>11){mesAtual=0;anoAtual++;} if(mesAtual<0){mesAtual=11;anoAtual--;} render(); }
 function irHoje(){ anoAtual=new Date().getFullYear(); mesAtual=new Date().getMonth(); render(); }
 function aba(t){ document.getElementById('abaMes').style.display=t==='mes'?'block':'none'; document.getElementById('abaCal').style.display=t==='cal'?'block':'none'; document.getElementById('abaAnual').style.display=t==='anual'?'block':'none'; document.getElementById('abaLog').style.display=t==='log'?'block':'none'; document.querySelectorAll('.tab').forEach(el=>el.classList.remove('ativo')); document.getElementById(t==='mes'?'tMes':t==='cal'?'tCal':t==='anual'?'tAnual':'tLog').classList.add('ativo'); render(); }
-
-async function addConta(){
+function addConta(){
   const nome=document.getElementById('fNome').value.trim();
   const mesRef=document.getElementById('fMesRef').value;
   const anoRef=document.getElementById('fAnoRef').value;
@@ -74,9 +72,9 @@ async function addConta(){
   const repetirSel=document.getElementById('fRepetir').value;
   const repetirCustom=document.getElementById('fRepetirCustom').value;
   const fileInput=document.getElementById('fComprovante');
-  if(!nome){ await appAlert('Digite o nome da conta! Ex: Gás Naturgy','Campo obrigatório','📝'); return; }
-  if(!vencInput){ await appAlert('Selecione a data de vencimento!','Falta data','📅'); return; }
-  if(!valorInput){ await appAlert('Digite o valor!','Falta valor','💰'); return; }
+  if(!nome){ appAlert('Digite o nome da conta! Ex: Gás Naturgy','Campo obrigatório','📝'); return; }
+  if(!vencInput){ appAlert('Selecione a data de vencimento!','Falta data','📅'); return; }
+  if(!valorInput){ appAlert('Digite o valor!','Falta valor','💰'); return; }
   let repetir=repetirSel==='custom'?parseInt(repetirCustom)||1:parseInt(repetirSel)||1;
   let dataVenc=new Date(vencInput+'T12:00:00');
   let valor=parseFloat(valorInput.replace(',','.'));
@@ -92,12 +90,10 @@ async function addConta(){
 }
 function usarTemplate(nome){ let t=templates.find(x=>x.nome===nome); if(!t) return; document.getElementById('fNome').value=t.nome; document.getElementById('fCat').value=t.categoria; document.getElementById('fMesRef').value=mesAtual+1; document.getElementById('fAnoRef').value=anoAtual; showToast(`Usando ${nome}`); }
 function replicarConta(id){ let o=contas.find(x=>String(x.id)===String(id)); if(!o) return; let d=new Date(o.ano,o.mes+1,o.diaVenc); contas.push({id:Date.now()+Math.random(),nome:o.nome,ref:`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,valor:o.valor,diaVenc:d.getDate(),mes:d.getMonth(),ano:d.getFullYear(),vencISO:d.toISOString().slice(0,10),vencBR:d.toLocaleDateString('pt-BR'),categoria:o.categoria,comprovante:null,quitado:false}); salvar(); addLog(`Replicou ${o.nome}`); anoAtual=d.getFullYear(); mesAtual=d.getMonth(); render(); showToast('Replicado!'); }
-function editarConta(id){ let c=contas.find(x=>String(x.id)===String(id)); if(!c) return; appAlert('Para editar, exclua e crie de novo com o valor correto','Editar','✏️'); }
 function toggleQuitado(id){ let c=contas.find(x=>String(x.id)===String(id)); if(c){c.quitado=!c.quitado; salvar(); addLog(`${c.quitado?'Quitou':'Desquitou'} ${c.nome}`); render(); showToast(c.quitado?'Pago! ✅':'Pendente');} }
 function remover(id){ let c=contas.find(x=>String(x.id)===String(id)); contas=contas.filter(x=>String(x.id)!==String(id)); salvar(); addLog(`Excluiu ${c?c.nome:''}`); render(); showToast('Excluído!'); }
 function anexar(id,input){ let c=contas.find(x=>String(x.id)===String(id)); if(!c||!input.files[0]) return; let r=new FileReader(); r.onload=e=>{c.comprovante=e.target.result; salvar(); render(); showToast('Anexado!');}; r.readAsDataURL(input.files[0]); }
 function loadGasNaturgy(){ const dados=[{ref:'10/2026',valor:45.76,venc:'2026-11-04'},{ref:'09/2026',valor:62.20,venc:'2026-10-05'},{ref:'08/2026',valor:52.92,venc:'2026-09-03'},{ref:'07/2026',valor:53.00,venc:'2026-08-03'},{ref:'06/2026',valor:57.54,venc:'2026-07-03'},{ref:'05/2026',valor:44.39,venc:'2026-06-03'},{ref:'04/2026',valor:53.53,venc:'2026-05-05'},{ref:'03/2026',valor:44.39,venc:'2026-04-03'},{ref:'02/2026',valor:46.67,venc:'2026-03-07'},{ref:'01/2026',valor:37.95,venc:'2026-02-03'},{ref:'12/2025',valor:52.04,venc:'2026-01-07'},{ref:'11/2025',valor:51.24,venc:'2025-12-03'},{ref:'10/2025',valor:31.30,venc:'2025-11-03'}]; dados.forEach(d=>{let dt=new Date(d.venc+'T12:00:00'); contas.push({id:Date.now()+Math.random(),nome:'Gás Naturgy',ref:d.ref,valor:d.valor,diaVenc:dt.getDate(),mes:dt.getMonth(),ano:dt.getFullYear(),vencISO:d.venc,vencBR:dt.toLocaleDateString('pt-BR'),categoria:'Gás',comprovante:null,quitado:false});}); if(!templates.find(t=>t.nome==='Gás Naturgy')) templates.push({nome:'Gás Naturgy',categoria:'Gás'}); salvar(); render(); showToast('Importado!'); }
-
 function render(){
   initSelects();
   if(currentUser){ document.getElementById('telaLogin').style.display='none'; document.getElementById('telaApp').style.display='block'; }
