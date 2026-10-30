@@ -7,53 +7,44 @@
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <div><h1>Controle Completo</h1><p>Mensal • Anual • Calendario • Notificacao real • GitHub Pages</p></div>
-    <div><div id="hojeInfo" style="font-size:11px;background:rgba(255,255,255,.12);padding:5px 9px;border-radius:8px"></div><button class="btn-s" style="background:#fff;color:#0f172a;margin-top:6px;width:100%" onclick="instalarPWA()">📲 Instalar no celular</button></div>
+    <div><h1>Controle Completo</h1><p>Mensal • Vencimento real • Comprovante</p></div>
+    <div><div id="hojeInfo" style="font-size:11px;background:rgba(255,255,255,.12);padding:5px 9px;border-radius:8px"></div></div>
   </div>
-
   <div class="nav-mes">
     <button onclick="mudarMes(-1)">‹</button>
     <div class="mes-atual" id="mesLabel">...</div>
     <div style="display:flex;gap:4px"><button onclick="irHoje()">Hoje</button><button onclick="mudarMes(1)">›</button></div>
   </div>
-
   <div class="tabs">
-    <div class="tab ativo" id="tMes" onclick="aba('mes')">Lista do Mes</div>
-    <div class="tab" id="tCal" onclick="aba('cal')">Calendario</div>
+    <div class="tab ativo" id="tMes" onclick="aba('mes')">Lista do Mês</div>
+    <div class="tab" id="tCal" onclick="aba('cal')">Calendário</div>
     <div class="tab" id="tAnual" onclick="aba('anual')">Anual</div>
-    <div class="tab" id="tNotif" onclick="aba('notif')">🔔 Avisos</div>
-  </div>
-
-  <div id="abaNotif" style="display:none">
-    <div class="notif-card">
-      <h3>🔔 Configurar avisos reais (funciona no GitHub Pages)</h3>
-      <p style="font-size:11px;color:#cbd5e1">Ative para receber aviso mesmo com site fechado.</p>
-      <label style="color:#e2e8f0;margin-top:12px">1. Notificacao do navegador</label>
-      <button class="btn-green" onclick="ativarNotificacaoNavegador()">Ativar notificacao do navegador</button>
-      <div id="statusNotif" style="font-size:11px;color:#86efac;margin-top:6px"></div>
-      <label style="color:#e2e8f0;margin-top:12px">2. E-mail (opcional)</label>
-      <input id="emailUsuario" placeholder="seu@email.com">
-      <select id="horaEmail"><option value="08:00">08:00</option><option value="09:00" selected>09:00</option><option value="18:00">18:00</option></select>
-      <button class="btn-blue" onclick="salvarEmail()">Salvar e-mail</button>
-      <label style="color:#e2e8f0;margin-top:12px">3. Push via ntfy.sh</label>
-      <input id="ntfyTopico" placeholder="Ex: minhas-contas-joao123">
-      <button class="btn-orange" onclick="salvarNtfy()">Salvar topico ntfy</button>
-      <button class="btn-ghost" style="background:#fff;width:100%;margin-top:8px" onclick="testarAvisos()">Testar avisos agora</button>
-    </div>
   </div>
 
   <div id="abaMes">
-    <div class="stats"><div class="stat"><h3>Total mes</h3><div id="sTotal">R$ 0</div></div><div class="stat o"><h3>Pendente</h3><div id="sPendente">R$ 0</div></div><div class="stat g"><h3>Pago</h3><div id="sPago">R$ 0</div></div><div class="stat d"><h3>Qtd</h3><div id="sQtd">0</div></div></div>
-    <div class="layout"><div><div class="card"><h3>Nova Conta</h3><label>Nome *</label><input id="fNome" placeholder="Condominio"><label>Dia 1-31 *</label><input id="fDia" type="number" min="1" max="31"><label>Valor R$</label><input id="fValor" type="number" placeholder="458"><label>Tipo</label><select id="fTipo" onchange="toggleTipo()"><option value="fixa">Fixa</option><option value="parcelada">Parcelada</option><option value="unica">Unica</option></select><div id="boxParcelas" style="display:none"><label>Qtd parcelas</label><input id="fParcelas" type="number" value="12"><label>Parcela atual</label><input id="fParcelaAtual" type="number" value="1"></div><label>Categoria</label><select id="fCat"><option>Moradia</option><option>Transporte</option><option>Impostos</option><option>Servicos</option><option>Outros</option></select><label>PIX</label><textarea id="fPix" placeholder="PIX copia e cola"></textarea><button class="btn-blue" onclick="addConta()">Adicionar conta</button></div><div class="card"><button class="btn-navy" onclick="loadPadrao()">Carregar 5 base</button><button class="btn-orange" onclick="excelMes()">Excel mes</button><button class="btn-green" onclick="excelAnual()">Excel anual</button></div></div><div class="card"><div style="display:flex;justify-content:space-between"><h3 id="tituloLista">Contas</h3><select id="filtro" onchange="render()" style="width:110px;padding:6px"><option value="todas">Todas</option><option value="pendentes">Pendentes</option><option value="quitadas">Quitadas</option></select></div><div id="lista" style="margin-top:10px"></div></div></div>
+    <div class="stats"><div class="stat"><h3>Total mês</h3><div id="sTotal">R$ 0</div></div><div class="stat o"><h3>Pendente</h3><div id="sPendente">R$ 0</div></div><div class="stat g"><h3>Pago</h3><div id="sPago">R$ 0</div></div><div class="stat d"><h3>Qtd</h3><div id="sQtd">0</div></div></div>
+    <div class="layout"><div>
+      <div class="card"><h3>Nova Conta</h3>
+        <label>Nome *</label><input id="fNome" placeholder="Ex: Gás Naturgy">
+        <label>Mês Referência *</label><input id="fRef" placeholder="10/2026" value="">
+        <small style="color:#64748b">Mês da conta (igual seu print 10/2026)</small>
+        <label>Vencimento *</label><input id="fVenc" type="date">
+        <label>Valor R$ *</label><input id="fValor" type="number" step="0.01" placeholder="45,76">
+        <label>Categoria</label><select id="fCat"><option>Moradia</option><option>Gás</option><option>Transporte</option><option>Impostos</option><option>Serviços</option><option>Outros</option></select>
+        <label>Repetir?</label><select id="fRepetir"><option value="1">Só neste vencimento</option><option value="2">2 meses</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">12 meses</option></select>
+        <label>Comprovante (foto/PDF)</label><input id="fComprovante" type="file" accept="image/*,.pdf">
+        <button class="btn-blue" onclick="addConta()">Adicionar conta</button>
+      </div>
+      <div class="card"><button class="btn-navy" onclick="loadGasNaturgy()">📥 Importar exemplo Gás da imagem</button><button class="btn-orange" onclick="excelMes()">Excel mês</button></div>
+    </div>
+    <div class="card"><div style="display:flex;justify-content:space-between"><h3 id="tituloLista">Contas</h3><select id="filtro" onchange="render()" style="width:110px;padding:6px"><option value="todas">Todas</option><option value="pendentes">Pendentes</option><option value="quitadas">Quitadas</option></select></div><div id="lista" style="margin-top:10px"></div></div></div>
   </div>
-
   <div id="abaCal" style="display:none"><div class="card"><div id="calGrid"></div></div></div>
-  <div id="abaAnual" style="display:none"><div class="stats"><div class="stat"><h3>Total anual</h3><div id="aTotal">R$ 0</div></div><div class="stat g"><h3>Pago ano</h3><div id="aPago">R$ 0</div></div><div class="stat o"><h3>Falta</h3><div id="aFalta">R$ 0</div></div><div class="stat d"><h3>Media</h3><div id="aMedia">R$ 0</div></div></div><div class="card"><div class="mes-grid" id="gridAnual"></div></div></div>
+  <div id="abaAnual" style="display:none"><div class="stats"><div class="stat"><h3>Total anual</h3><div id="aTotal">R$ 0</div></div><div class="stat g"><h3>Pago ano</h3><div id="aPago">R$ 0</div></div><div class="stat o"><h3>Falta</h3><div id="aFalta">R$ 0</div></div><div class="stat d"><h3>Média</h3><div id="aMedia">R$ 0</div></div></div><div class="card"><div class="mes-grid" id="gridAnual"></div></div></div>
 </div>
 <script src="script.js"></script>
 </body>
